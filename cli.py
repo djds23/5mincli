@@ -1,5 +1,6 @@
 import re
 import os
+import sys
 import json
 import urllib
 import urllib2
@@ -30,11 +31,12 @@ def pull_url(url, single=False):
         return 'There was an error pulling the video: '+ e
 
 def sort_json(full_page, single=False):
-    '''take out the json and sort it'''
+    '''take out the json and sort it, or end program with bad id'''
     json_obj = json.loads(full_page)
     try:
         exception = json_obj['api']['exception'] 
         if exception:
+            print 'There was an exception:', exception 
             return exception
     except KeyError:
         items = json_obj['items']
@@ -55,28 +57,36 @@ def extract_elements(items, key=0, title='title', description='description',
         
 
 def write_single(elements, url):
+    '''write a log of requested elements for single videos'''
     with open('report.txt', 'w') as f:
         print 'Writing entry to report.txt..'
         for entry in elements:
             print 'Writing... ', entry
-            f.write(str(entry))
+            if isinstance(entry, int):
+                f.write(str(entry))
+            elif isinstance(entry, unicode):
+                f.write(entry.encode('ascii','ignore'))
             f.write('\n')
         download(url, str(elements[-1]))
         f.write('\n\nwritten by 5mincli')
         f.close()
 
 def write_playlist(elements):
+    '''write a log for each video in a playlist'''
     with open('list_report.txt', 'w') as f:
         for entry in elements:
             for contents in entry:
                 print 'Writing... ', contents
-                f.write(str(contents))
+                if isinstance(content, int):
+                    f.write(str(content))
+                elif isinstance(content, unicode):
+                    f.write(content.encode('ascii','ignore'))
             f.write('\n')
             download(str(entry[4]),str(entry[3]))
         f.write('\n\nwritten by 5mincli')
 
 def download(url, aolonid):
-    '''download files'''
+    '''download files and cleanup failures'''
     file_name = aolonid + '.mp4'
     try:
         print 'Attempting '+ aolonid
@@ -88,10 +98,14 @@ def download(url, aolonid):
 
 def cli():
     print 'the Cli for AolOn'
+    print 'Input "exit" to exit the program.'
     print 'Paste your AolOn Id/playlist id below:'
     from_user = str(raw_input())
+    if from_user.lower() == 'exit':
+        sys.exit()
     single_or_playlist(from_user)
 
 if __name__=='__main__':
-    cli()
+    while True:
+        cli()
 
