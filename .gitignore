@@ -49,6 +49,13 @@ coverage.xml
 *.log
 *.pot
 
+#working documents
+videoAsset.py
+make.py
+*.mp4
+*.txt
+*.csv
+
 # Sphinx documentation
 docs/_build/
 
