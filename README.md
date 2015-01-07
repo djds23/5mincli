@@ -7,7 +7,7 @@ To start the program use:
 
     python cli.py
 
-ctrl-C to quit. 
+Type exit or use ctrl-C to quit. 
 
 Enter a 9 digit video ID number to instantly aquire metadata & viewing rendition for a file.
 

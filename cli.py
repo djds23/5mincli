@@ -6,31 +6,21 @@ import urllib
 import urllib2
 
 
-def single_or_playlist(aolonid):
-    '''find if we are single video or playlist id'''
-    if len(aolonid)==6:
-        url = 'http://api.5min.com/video/list/info.json?Video_Group_Id='+aolonid+'&num_of_videos=200'
-        return pull_url(url)
-    elif len(aolonid)==9:
-        url = 'http://api.5min.com/video/'+aolonid+'/info.json?sid=577'
-        return pull_url(url, single=True)
-    else:
-        return 'There is an issue with your id.'
+PLAYLIST_API = 'http://api.5min.com/video/list/info.json?Video_Group_Id={}&num_of_videos=200'
+VIDEO_API = 'http://api.5min.com/video/{}/info.json?sid=577'
 
-def pull_url(url, single=False):
+def call_aolon_api(aolonid):
     '''request file and extract JSON'''
     try:
-        request = urllib2.Request(url)
+        url = VIDEO_API if len(aolonid) == 9 else PLAYLIST_API
+        request = urllib2.Request(url.format(aolonid))
         response = urllib2.urlopen(request)
         full_page = response.read()
-        if single:
-            return sort_json(full_page, single=True)
-        else:
-            return sort_json(full_page)
+        return sort_json(full_page)        
     except urllib2.URLError, e:
         return 'There was an error pulling the video: '+ e
 
-def sort_json(full_page, single=False):
+def sort_json(full_page):
     '''take out the json and sort it, or end program with bad id'''
     json_obj = json.loads(full_page)
     try:
@@ -40,20 +30,35 @@ def sort_json(full_page, single=False):
             return exception
     except KeyError:
         items = json_obj['items']
-        if single:
-            return extract_elements(items, single=True)
-        else:
-            return extract_elements(items)
+        return extract_elements(items)
+
     
-def extract_elements(items, key=0, title='title', description='description',
-        api_id='id',studioName='studioName', player='player',single=False):
+def extract_elements(items, 
+                     key=0, 
+                     title='title', 
+                     description='description',
+                     api_id='id',
+                     studioName='studioName', 
+                     player='player'):
     '''pull out the elements we want'''
-    if single:
+    if len(items) == 1:
         base =items[key]
-        return write_single([base[title], base[description], base[studioName], base[player]['url'],base[player]['source'],base[api_id]], base['videoUrl'])
+        return write_single([base[title], 
+                            base[description], 
+                            base[studioName], 
+                            base[player]['url'],
+                            base[player]['source'],
+                            base[api_id]], 
+                            base['videoUrl'])
     else:
         bases = [items[i] for i, elements in enumerate(items)]
-        return write_playlist([[base[title], base[description], base[studioName],base[api_id],base['videoUrl'], base[player]['url'],base[player]['source']]for base in bases])
+        return write_playlist([[base[title], 
+                                base[description], 
+                                base[studioName],
+                                base[api_id],
+                                base['videoUrl'], 
+                                base[player]['url'],
+                                base[player]['source']] for base in bases])
         
 
 def write_single(elements, url):
@@ -103,7 +108,7 @@ def cli():
     from_user = str(raw_input())
     if from_user.lower() == 'exit':
         sys.exit()
-    single_or_playlist(from_user)
+    call_aolon_api(from_user)
 
 if __name__=='__main__':
     while True:
